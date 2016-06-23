@@ -11,6 +11,9 @@ module Fourth
 
     base_uri 'https://minutedock.com/api/v1/'
 
+    class_option :account_id, :type => :string
+
+
     desc 'status', 'returns the current entry status'
     method_option :filter, :type => :array, :aliases => '-f', :desc => 'filter'
     def status
@@ -29,37 +32,37 @@ module Fourth
 
     desc 'log', 'log the current entry'
     def log
-      resp = Query.new.log
-      puts resp.parsed_response
+      res = Query.new(options).log
+      puts res.parsed_response
     end
 
     desc 'entries', 'return entries'
     def entries
-      res = Query.new.entries
+      res = Query.new(options).entries
       puts res.parsed_response
     end
 
     desc 'entry', 'create a new entry'
     def entry(description)
-      res = Query.new.entry(description)
+      res = Query.new(options).entry(description)
       puts res.parsed_response
     end
 
     desc 'contacts', 'list contacts'
     def contacts
-      res = Query.new.contacts
+      res = Query.new(options).contacts
       puts res.parsed_response
     end
 
     desc 'projects', 'list projects'
     def projects
-      res = Query.new.projects
+      res = Query.new(options).projects
       puts res.parsed_response
     end
 
     desc 'accounts', 'list accounts'
     def accounts
-      res = Query.new.accounts
+      res = Query.new(options).accounts
       puts res.parsed_response
     end
   end
