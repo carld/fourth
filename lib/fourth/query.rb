@@ -26,6 +26,7 @@ module Fourth
       endpoint(:entries, :get, '/entries.json')
       endpoint(:contacts, :get, '/contacts.json')
       endpoint(:projects, :get, '/projects.json')
+      endpoint(:accounts, :get, '/accounts.json')
     end
 
     def entry(description='',duration='',contact_id='',task_ids='')

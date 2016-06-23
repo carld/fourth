@@ -56,6 +56,12 @@ module Fourth
       res = Query.new.projects
       puts res.parsed_response
     end
+
+    desc 'accounts', 'list accounts'
+    def accounts
+      res = Query.new.accounts
+      puts res.parsed_response
+    end
   end
 
 end
