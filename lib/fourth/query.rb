@@ -29,7 +29,6 @@ module Fourth
     def endpoint(name, method, path='/', options={}, &block)
       Query.instance_eval do 
         define_method(name) do |account_id=nil|
-          #options = options.merge(@options)
           self.send(method, path, options)
         end
       end
