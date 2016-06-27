@@ -4,6 +4,7 @@ require 'ostruct'
 require 'erb'
 require 'csv'
 require 'json'
+require 'time'
 
 require 'fourth/query'
 require 'fourth/cli_copy'
@@ -17,7 +18,7 @@ module Fourth
     base_uri 'https://minutedock.com/api/v1/'
 
     class_option :account_id, :type => :string
-    class_option :headers, :type => :boolean
+    class_option :headers, :type => :boolean, :default => :true
 
     desc 'status', 'returns the current entry status'
     method_option :filter, :type => :array, :aliases => '-f', :desc => 'filter'
@@ -29,8 +30,8 @@ module Fourth
         Minute Doc Status
         -----------------
         Description: <%= data['description'] %>
-        Duration: <%= data['duration'] %>
-        Logged: <%= data['logged'] %>
+        Duration:    <%= data['duration'] %>
+        Logged:      <%= data['logged'] %>
       EOF
       puts out.result(binding)
     end
@@ -38,52 +39,74 @@ module Fourth
     desc 'log', 'log the current entry'
     def log
       res = Query.new(options).log
-      puts_response(res)
+      tsv(res)
     end
 
     desc 'entries', 'return entries'
     def entries
       res = Query.new(options).entries
-      puts_response(res)
+      tsv(res)
     end
 
     desc 'entry', 'create a new entry'
-    def entry(description)
-      res = Query.new(options).entry(description)
-      puts_response(res)
+    def entry(description='',duration='',contact_id='',task_ids='')
+      res = Query.new(options).entry(description,duration,contact_id,task_ids)
+      tsv(res)
     end
 
     desc 'contacts', 'list contacts'
     def contacts
       res = Query.new(options).contacts
-      puts_response(res)
+      tsv(res)
     end
 
     desc 'projects', 'list projects'
     def projects
       res = Query.new(options).projects
-      puts_response(res)
+      tsv(res)
     end
 
     desc 'accounts', 'list accounts'
     def accounts
       res = Query.new(options).accounts
-      puts_response(res)
+      tsv(res)
     end
 
-    desc 'copy', 'copy entries from one account to another'
-    subcommand 'copy', Copy
+    desc 'tasks', 'list tasks'
+    def tasks
+      res = Query.new(options).tasks
+      tsv(res)
+    end
 
-    desc 'multi', 'perform action on multiple accounts'
-    subcommand 'multi', Multi
+    desc 'submit', 'submit entries via stdin in tab delimited format'
+    def submit
+      res = Query.new(options).entries
+      existing = JSON.parse(res.body)
+      entries = CSV.new($stdin, { col_sep:"\t", row_sep:"\n", headers: options[:headers] } )
+      entries.each do |row|
+        found = existing.select do |json|
+          (json['description'] == row['description']) && (json['duration'].to_s == row['duration'])
+        end
+
+        if found.length == 0
+          puts "Submitting '#{row['description']}'"
+          body = {}
+          body['entry[description]'] = row['description']
+          body['entry[duration]'] = row['duration']
+          res = Query.new(options).entry({body: body})
+        else
+          puts "Skipping #{found.length} duplicate '#{row['description']}'"
+        end
+      end
+      puts "Finished submission to #{options[:account_id]}"
+    end
 
     private
 
-    def puts_response(response)
-      puts response.parsed_response.first.keys.join("\t") if options[:headers]
-      response.parsed_response.each do |json|
-        puts json.values.join("\t")
-      end
+    def tsv(response)
+      json = JSON.parse(response.body)
+      puts json.first.collect {|k,v| k}.join("\t") if options[:headers]
+      puts json.collect {|node| node.collect{|k,v| v || "nil" }.join("\t") }.join("\n")
     end
   end
 
