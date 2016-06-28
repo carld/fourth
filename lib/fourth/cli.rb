@@ -19,6 +19,7 @@ module Fourth
 
     class_option :account_id, :type => :string
     class_option :headers, :type => :boolean, :default => :true
+    class_option :debug, :type => :boolean
 
     desc 'status', 'returns the current entry status'
     method_option :filter, :type => :array, :aliases => '-f', :desc => 'filter'
@@ -101,9 +102,44 @@ module Fourth
       puts "Finished submission to #{options[:account_id]}"
     end
 
+    option :from, :required => true
+    option :to, :required => true
+    option :project_id, :required => true
+    desc 'copy', 'copy current entries from one account to the other, setting the project id on the destination'
+    def copy
+      opts = {:account_id => options[:to]}
+      res = Query.new(opts).entries
+      dst = JSON.parse(res.body)
+
+      opts = {:account_id => options[:from]}
+      res = Query.new(opts).entries
+      src = JSON.parse(res.body)
+
+      src.each do |entry|
+        found = dst.select do |json|
+          (json['description'] == entry['description']) && (json['duration'] == entry['duration'])
+        end
+
+        if found.length == 0
+          puts "Copying '#{entry['description']}'"
+          opts = {:account_id => options[:to]}
+          body = {}
+          body['entry[description]'] = entry['description']
+          body['entry[duration]'] = entry['duration']
+          body['entry[project_id]'] = options[:project_id]
+          body['entry[log_at]']    = entry['log_at'] || entry['logged_at']
+          body['entry[logged_at]'] = entry['log_at'] || entry['logged_at']
+          res = Query.new(opts).entry({body: body})
+        else
+          puts "Skipping #{found.length} duplicate '#{entry['description']}'"
+        end
+      end
+    end
+
     private
 
     def tsv(response)
+      puts options.inspect if options[:debug]
       json = JSON.parse(response.body)
       puts json.first.collect {|k,v| k}.join("\t") if options[:headers]
       puts json.collect {|node| node.collect{|k,v| v || "nil" }.join("\t") }.join("\n")
