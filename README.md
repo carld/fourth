@@ -23,3 +23,12 @@ Or install it yourself as:
 And to run the CLI:
 
     $ bin/fourth
+
+The reason you are here, to copy entries from one account to another:
+
+    $ fourth copy --from=123 --to=456 --project-id=789
+
+This will copy entries from one account Id to another account Id, setting the project id as provided in the copies.
+It will skip duplicates. It detects duplicates where the to account has an entry with the same description and duration.
+
+
