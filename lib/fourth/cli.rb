@@ -117,7 +117,9 @@ module Fourth
 
       src.each do |entry|
         found = dst.select do |json|
-          (json['description'] == entry['description']) && (json['duration'] == entry['duration'])
+          (json['description'] == entry['description']) &&
+          (json['duration'] == entry['duration']) &&
+          (json['logged_at'] = entry['logged_at'])
         end
 
         if found.length == 0
