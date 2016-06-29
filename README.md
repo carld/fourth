@@ -6,23 +6,13 @@ https://developer.minutedock.com/guides/building-a-command-line-interface-for-th
 
 ## Installation
 
-Add this line to your application's Gemfile:
-
-```ruby
-gem 'fourth'
-```
-
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
+Install it yourself as:
 
     $ gem install fourth
 
 And to run the CLI:
 
-    $ bin/fourth
+    $ fourth
 
 The reason you are here, to copy entries from one account to another:
 
