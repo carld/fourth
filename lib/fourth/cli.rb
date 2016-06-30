@@ -7,8 +7,6 @@ require 'json'
 require 'time'
 
 require 'fourth/query'
-require 'fourth/cli_copy'
-require 'fourth/cli_multi'
 
 module Fourth
 
@@ -24,7 +22,7 @@ module Fourth
     desc 'status', 'returns the current entry status'
     method_option :filter, :type => :array, :aliases => '-f', :desc => 'filter'
     def status
-      data = Query.new.status
+      data = Query.new(options).status
       data = data.parsed_response
       data = data.select {|k,v| options[:filter].include? k } if options[:filter]
       out = ERB.new <<-EOF.gsub(/^\s+/, '')
@@ -46,12 +44,6 @@ module Fourth
     desc 'entries', 'return entries'
     def entries
       res = Query.new(options).entries
-      tsv(res)
-    end
-
-    desc 'entry', 'create a new entry'
-    def entry(description='',duration='',contact_id='',task_ids='')
-      res = Query.new(options).entry(description,duration,contact_id,task_ids)
       tsv(res)
     end
 
@@ -79,28 +71,6 @@ module Fourth
       tsv(res)
     end
 
-    desc 'submit', 'submit entries via stdin in tab delimited format'
-    def submit
-      res = Query.new(options).entries
-      existing = JSON.parse(res.body)
-      entries = CSV.new($stdin, { col_sep:"\t", row_sep:"\n", headers: options[:headers] } )
-      entries.each do |row|
-        found = existing.select do |json|
-          (json['description'] == row['description']) && (json['duration'].to_s == row['duration'])
-        end
-
-        if found.length == 0
-          puts "Submitting '#{row['description']}'"
-          body = {}
-          body['entry[description]'] = row['description']
-          body['entry[duration]'] = row['duration']
-          res = Query.new(options).entry({body: body})
-        else
-          puts "Skipping #{found.length} duplicate '#{row['description']}'"
-        end
-      end
-      puts "Finished submission to #{options[:account_id]}"
-    end
 
     option :from, :required => true
     option :to, :required => true
