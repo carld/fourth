@@ -19,6 +19,8 @@ module Fourth
     class_option :headers, :type => :boolean, :default => :true
     class_option :debug, :type => :boolean
 
+    class_option :from_date, :type => :string
+
     desc 'status', 'returns the current entry status'
     method_option :filter, :type => :array, :aliases => '-f', :desc => 'filter'
     def status
@@ -43,7 +45,9 @@ module Fourth
 
     desc 'entries', 'return entries'
     def entries
-      res = Query.new(options).entries
+      opts = {}
+      opts[:query] = { 'from' => options["from_date"] } if options["from_date"]
+      res = Query.new(options).entries(opts)
       tsv(res)
     end
 
@@ -77,12 +81,15 @@ module Fourth
     option :project_id, :required => true
     desc 'copy', 'copy current entries from one account to the other, setting the project id on the destination'
     def copy
+      q = {}
+      q[:query] = { 'from' => options["from_date"] } if options["from_date"]
+
       opts = {:account_id => options[:to]}
-      res = Query.new(opts).entries
+      res = Query.new(opts).entries(q)
       dst = JSON.parse(res.body)
 
       opts = {:account_id => options[:from]}
-      res = Query.new(opts).entries
+      res = Query.new(opts).entries(q)
       src = JSON.parse(res.body)
 
       src.each do |entry|
